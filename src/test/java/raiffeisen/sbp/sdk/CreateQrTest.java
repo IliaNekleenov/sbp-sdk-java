@@ -1,19 +1,19 @@
 package raiffeisen.sbp.sdk;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 import raiffeisen.sbp.sdk.client.SbpClient;
+import raiffeisen.sbp.sdk.exception.SbpException;
 import raiffeisen.sbp.sdk.model.QRType;
-import raiffeisen.sbp.sdk.model.Response;
+import raiffeisen.sbp.sdk.model.in.QRUrl;
 import raiffeisen.sbp.sdk.model.out.QRInfo;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.UUID;
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CreateQrTest {
 
@@ -28,8 +28,10 @@ public class CreateQrTest {
         return timestamp.substring(0,timestamp.indexOf("["));
     }
 
+    private static SbpClient client = new SbpClient(SbpClient.TEST_DOMAIN,"");
+
     @Test
-    public void createQRInfoDynamicTest() throws IOException {
+    public void createQRInfoDynamicTest() {
         QRInfo QR = QRInfo.creator().
                 createDate(getCreateDate()).
                 order(getOrderInfo()).
@@ -39,17 +41,22 @@ public class CreateQrTest {
                 sbpMerchantId(TEST_SBP_MERCHANT_ID).
                 create();
 
-        Response response = SbpClient.registerQR(SbpClient.TEST_DOMAIN, QR);
+        boolean thrown = false;
+        try {
+            QRUrl response = client.registerQR(QR);
+            assertEquals("SUCCESS", response.getCode());
+        }
+        catch (Exception e) {
+            System.out.println(e.getMessage());
+            thrown = true;
+        }
+        assertFalse(thrown);
 
-        System.out.println(response.getCode());
-        System.out.println(response.getBody());
 
-        assertEquals(200, response.getCode());
-        assertNotEquals(-1, response.getBody().indexOf("SUCCESS"));
     }
 
     @Test
-    public void createQRInfoStaticTest() throws IOException {
+    public void createQRInfoStaticTest() {
         QRInfo QR = QRInfo.creator().
                 createDate(getCreateDate()).
                 order(getOrderInfo()).
@@ -57,17 +64,21 @@ public class CreateQrTest {
                 sbpMerchantId(TEST_SBP_MERCHANT_ID).
                 create();
 
-        Response response = SbpClient.registerQR(SbpClient.TEST_DOMAIN, QR);
+        boolean thrown = false;
+        try {
+            QRUrl response = client.registerQR(QR);
+            assertEquals("SUCCESS", response.getCode());
+        }
+        catch (Exception e) {
+            System.out.println(e.getMessage());
+            thrown = true;
+        }
+        assertFalse(thrown);
 
-        System.out.println(response.getCode());
-        System.out.println(response.getBody());
-
-        assertEquals(200, response.getCode());
-        assertNotEquals(-1, response.getBody().indexOf("SUCCESS"));
     }
 
     @Test
-    public void createQRInfoMaxTest() throws IOException {
+    public void createQRInfoMaxTest() {
         // Test without "account" parameter
         QRInfo QR = QRInfo.creator().
                 additionalInfo("Доп информация").
@@ -81,15 +92,36 @@ public class CreateQrTest {
                 sbpMerchantId(TEST_SBP_MERCHANT_ID).
                 create();
 
-        Response response = SbpClient.registerQR(SbpClient.TEST_DOMAIN, QR);
-
-        System.out.println(response.getCode());
-        System.out.println(response.getBody());
-
-        assertEquals(200, response.getCode());
-        assertNotEquals(-1, response.getBody().indexOf("SUCCESS"));
+        boolean thrown = false;
+        try {
+            QRUrl response = client.registerQR(QR);
+            assertEquals("SUCCESS", response.getCode());
+        }
+        catch (Exception e) {
+            System.out.println(e.getMessage());
+            thrown = true;
+        }
+        assertFalse(thrown);
 
     }
 
+    @Test
+    public void createQRExceptionTest() {
+        QRInfo badQR = QRInfo.creator(). // QR without type and without order
+                createDate(getCreateDate()).
+                sbpMerchantId(TEST_SBP_MERCHANT_ID).
+                create();
+
+        boolean thrown = false;
+        try {
+            QRUrl response = client.registerQR(badQR);
+            assertNotEquals("SUCCESS", response.getCode());
+        }
+        catch (Exception e) {
+            assertTrue(e instanceof SbpException);
+            thrown = true;
+        }
+        assertTrue(thrown);
+    }
 
 }

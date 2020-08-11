@@ -1,33 +1,24 @@
 package raiffeisen.sbp.sdk.client;
 
 
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
+import raiffeisen.sbp.sdk.exception.SbpException;
 import raiffeisen.sbp.sdk.model.Response;
+import raiffeisen.sbp.sdk.web.WebClient;
 
 import java.io.IOException;
+import java.util.Map;
 
-public class PostRequester {
-    public static Response request(String url, String body, final String secretKey) throws IOException {
+public class PostRequester extends Requester {
 
-        HttpPost poster = new HttpPost(url);
-        poster.addHeader("content-type", "application/json");
-        poster.addHeader("charset", "UTF-8");
-        if(secretKey != null) {
-            poster.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + secretKey);
-        }
+    public PostRequester(WebClient client) {
+        super(client);
+    }
 
-        poster.setEntity(new StringEntity(body));
+    public Response request(String url, String body, final String secretKey) throws SbpException, IOException {
 
-        try (CloseableHttpClient httpClient = HttpClients.createDefault();
-             CloseableHttpResponse response = httpClient.execute(poster)) {
+        Map<String, String> headers = prepareHeaders(secretKey);
 
-            return new Response(response.getStatusLine().getStatusCode(), EntityUtils.toString(response.getEntity()));
-        }
+        Response response = webClient.request(WebClient.POST_METHOD, url, headers, body);
+        return responseOrThrow(response);
     }
 }
